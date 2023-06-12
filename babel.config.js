@@ -3,12 +3,17 @@ module.exports = {
   plugins: [
     ['nativewind/babel'],
     [
+      'module:react-native-dotenv',
+      {
+        allowUndefined: false,
+      },
+    ],
+    [
       'module-resolver',
       {
         root: ['./src'],
         alias: {
-          '@/typings': './src/typings',
-          '@/screens': './src/screens',
+          '@/': './src',
         },
       },
     ],
