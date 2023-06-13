@@ -1,9 +1,10 @@
-import {View} from 'react-native';
+import {Button, TextInput, View} from 'react-native';
 import React from 'react';
 import {PrimaryButton} from '../components';
 import {useNavigation} from '@react-navigation/native';
 import {RootStackParamList} from '@/typings/types';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import auth, {FirebaseAuthTypes} from '@react-native-firebase/auth';
 import {WEB_CLIENT_ID} from '@env';
 
 import {
@@ -11,6 +12,7 @@ import {
   GoogleSigninButton,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
+
 import {useStore} from '../store';
 GoogleSignin.configure({
   webClientId: WEB_CLIENT_ID,
@@ -19,6 +21,10 @@ GoogleSignin.configure({
 const Login = () => {
   type LoginNavigation = NativeStackNavigationProp<RootStackParamList, 'Login'>;
   const navigation = useNavigation<LoginNavigation>();
+  const [confirm, setConfirm] =
+    React.useState<FirebaseAuthTypes.ConfirmationResult>();
+  const [code, setCode] = React.useState('');
+
   const {setUser, user} = useStore();
   function handleNavigate() {
     navigation.navigate('Home');
@@ -40,6 +46,33 @@ const Login = () => {
       }
     }
   };
+
+  async function signInWithPhoneNumber(phoneNumber: string) {
+    try {
+      const confirmation = await auth().signInWithPhoneNumber(phoneNumber);
+      setConfirm(confirmation);
+    } catch (err) {
+      console.log({err});
+    }
+  }
+  async function confirmCode() {
+    try {
+      await confirm?.confirm(code);
+    } catch (error) {
+      console.log('Invalid code.');
+    }
+  }
+  // Handle login
+  function onAuthStateChanged(fireUser: FirebaseAuthTypes.User | null) {
+    if (fireUser) {
+      console.log({fireUser});
+    }
+  }
+
+  React.useEffect(() => {
+    const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
+    return subscriber;
+  }, []);
   return (
     <View className="flex-1">
       <View className="mt-10 bg-indigo-300 h-[200px] justify-center items-center">
@@ -51,6 +84,12 @@ const Login = () => {
           color={GoogleSigninButton.Color.Dark}
           onPress={signIn}
         />
+        <PrimaryButton
+          handleClick={() => signInWithPhoneNumber('+917973765944')}>
+          Signin
+        </PrimaryButton>
+        <TextInput value={code} onChangeText={text => setCode(text)} />
+        <Button title="Confirm Code" onPress={() => confirmCode()} />
       </View>
     </View>
   );
